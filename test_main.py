@@ -22,11 +22,9 @@ def test_get_books():
     assert isinstance(response.json(), list)
 
 def test_cache_miss_behavior():
-    # Clear Redis cache manually
     r = redis.Redis(host="localhost", port=6379, db=0)
-    r.delete("books")  # simulate cache miss
-
-    # Add a new book (goes into DB)
+    r.delete("books")
+    
     book_payload = {
         "title": "Cache Miss Book",
         "author": "Tester"
@@ -35,18 +33,14 @@ def test_cache_miss_behavior():
     assert post_response.status_code == 200
     new_book = post_response.json()
 
-    # Ensure cache is empty before GET
     assert r.get("books") is None
 
-    # GET /books to simulate cache miss
     get_response = client.get("/books")
     assert get_response.status_code == 200
     books = get_response.json()
 
-    # The new book should be in the response
     assert any(book["title"] == "Cache Miss Book" for book in books)
 
-    # Cache should now be populated
     cached = r.get("books")
     assert cached is not None
     cached_books = json.loads(cached)
